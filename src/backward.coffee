@@ -7,10 +7,8 @@ class Backward
     need = []
     while program.length > 0
       [ program..., current ] = program
-      rule = do ->
-        rules
-          .find ([ operands..., operator, product ]) ->
-            operator == current
+      rule = rules.find ([ _..., operator, __ ]) ->
+        operator == current
       need = need[ ... -1 ]
       if rule?
         [ operands..., _, __ ] = rule
@@ -20,15 +18,17 @@ class Backward
   @satisfy: ( rules, need ) ->
     [ _..., target ] = need
     if target?
-      rule = rules.find ([ _..., product ]) -> target == product
-      if rule?
-        [ _..., operator, __ ] = rule
-        operator
-      else target
+      result = rules
+        .values()
+        .filter ([ _..., product ]) -> target == product
+        .map ([ _..., operator, __ ]) -> operator
+        .toArray()
+      result.push target
+      result
 
   @chain: ( rules, program ) ->
     need = @compile rules, program
-    @satisfy rules, need
+    @satisfy rules, need if need?
 
   compile: ( program ) -> Backward.compile @rules, program
 

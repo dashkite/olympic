@@ -29,10 +29,11 @@ do ->
 
 
       test "backward chaining", ->
+
         backward = Backward.make rules
-        assert.equal "x", backward.chain tokens "y"        
-        assert.equal "b", backward.chain tokens "x y"        
-        assert.equal "a", backward.chain tokens "b x y"
+        assert.deepEqual [ "x", "c" ], backward.chain tokens "y"        
+        assert.deepEqual [ "b" ], backward.chain tokens "x y"        
+        assert.deepEqual [ "a" ], backward.chain tokens "b x y"
         assert !( backward.chain tokens "a b x y" )?
 
     ]
