@@ -1,3 +1,6 @@
+import { negate } from "@dashkite/joy/predicate"
+import { equal, isWildcard } from "./helpers/wildcard"
+
 class Backward
 
   @make: ( rules ) ->
@@ -8,7 +11,7 @@ class Backward
     while program.length > 0
       [ program..., current ] = program
       rule = rules.find ([ _..., operator, __ ]) ->
-        operator == current
+        equal operator, current
       need = need[ ... -1 ]
       if rule?
         [ operands..., _, __ ] = rule
@@ -18,13 +21,23 @@ class Backward
   @satisfy: ( rules, need ) ->
     [ _..., target ] = need
     if target?
-      result = rules
+      operators = rules
         .values()
-        .filter ([ _..., product ]) -> target == product
+        .filter ([ _..., product ]) -> equal target, product
         .map ([ _..., operator, __ ]) -> operator
         .toArray()
-      result.push target
-      result
+      seen = new Set
+      operands = rules
+          .values()
+          .flatMap ([ operands..., _, product ]) ->
+            [( operands.filter negate isWildcard )..., product ]
+          .filter ( operand ) -> 
+            if !( seen.has operand )
+              seen.add operand
+              equal target, operand
+            else false
+          .toArray()
+      [ operators..., operands... ]
 
   @chain: ( rules, program ) ->
     need = @compile rules, program

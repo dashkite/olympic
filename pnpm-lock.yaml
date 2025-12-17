@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@dashkite/generic':
+        specifier: ^0.9.19
+        version: 0.9.19
     devDependencies:
       '@dashkite/amen':
         specifier: ^0.9.14
@@ -865,6 +869,9 @@ packages:
 
   '@dashkite/drn@0.12.16':
     resolution: {integrity: sha512-Dw1kYgLK509kvylzT3ERVWtBb3kZnJv3SquzH8WxHrD0B3KAvv3iUE6EQvogcI/MQZ80Y/aNQHvcqPPKbc9Ehw==}
+
+  '@dashkite/generic@0.9.19':
+    resolution: {integrity: sha512-6f0HtogQR3IPTT6XbL+d2a5y1GvJWrHFvlY86HiLggEErGyegbcGte5ZXZaQNRTXtkTpyuYw7LxrrkU1kq6Eqw==}
 
   '@dashkite/genie-clean@0.9.0':
     resolution: {integrity: sha512-cR5IaFycabxIOH0XrExG5DCrm91milsdPqt104+AcIFEtpthwQ55lgOkS660tC8l7SxnwZzMZbZxHP3oK0iT0A==}
@@ -4016,6 +4023,10 @@ snapshots:
       '@dashkite/zephyr': 0.9.0
       execa: 5.1.1
       js-yaml: 4.1.1
+
+  '@dashkite/generic@0.9.19':
+    dependencies:
+      '@dashkite/joy': 0.7.0
 
   '@dashkite/genie-clean@0.9.0':
     dependencies:
