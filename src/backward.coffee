@@ -14,8 +14,11 @@ class Backward
         equal operator, current
       need = need[ ... -1 ]
       if rule?
-        [ operands..., _, __ ] = rule
-        need = [ need..., operands... ]
+        [ operands..., _, product ] = rule
+        need = if product.inverse?
+          product.inverse need
+        else
+          [ need..., operands... ]
     need
 
   @satisfy: ( rules, need ) ->
@@ -28,15 +31,15 @@ class Backward
         .toArray()
       seen = new Set
       operands = rules
-          .values()
-          .flatMap ([ operands..., _, product ]) ->
-            [( operands.filter negate isWildcard )..., product ]
-          .filter ( operand ) -> 
-            if !( seen.has operand )
-              seen.add operand
-              equal target, operand
-            else false
-          .toArray()
+        .values()
+        .flatMap ([ operands..., _, product ]) ->
+          [( operands.filter negate isWildcard )..., product ]
+        .filter ( operand ) -> 
+          if !( seen.has operand )
+            seen.add operand
+            equal target, operand
+          else false
+        .toArray()
       [ operators..., operands... ]
 
   @chain: ( rules, program ) ->

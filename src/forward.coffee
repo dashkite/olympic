@@ -11,7 +11,10 @@ class Forward
       for [ conditions..., action ] in rules
         if ( match = overlap [ stack..., program... ], conditions )?
           [ prefix, _, suffix ] = match
-          stack = [ prefix..., action ]
+          stack = if action.apply?
+            action stack
+          else
+            [ prefix..., action ]
           program = suffix
           break
       break unless match

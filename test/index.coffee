@@ -25,7 +25,6 @@ do ->
       assert equal "*.bar", "*.*"
       assert equal "foo.bar", "*"
 
-
     test "chaining, without wildcards", do ->
 
       rules = [
@@ -80,6 +79,50 @@ do ->
         backward = Backward.make rules
         assert.deepEqual [ "x", "k.c" ], backward.chain tokens "y"        
 
+    ]
+
+    test "chaining with function products", [
+      
+      test "forward", ->
+
+        drop = ( stack ) -> stack[ ...-1 ]
+        dup = ([ rest..., last ]) -> [ rest..., last, last ]
+
+        rules = [
+          tokens "a b x c"
+          tokens "c y d"
+          tokens "d d z e"
+          [ ( tokens "* drop" )..., drop ]
+          [ ( tokens "* dup" )..., dup ]
+        ]
+
+        program = tokens "a b x y dup"
+        forward = Forward.make rules
+        assert.deepEqual ( stack = forward.compile program ), [ "d", "d" ]
+        assert.deepEqual ( forward.satisfy stack ), [ "z", "drop", "dup" ]
+
+      test "backward", ->
+
+        drop = ( stack ) -> stack[ ...-1 ]
+        dup = ([ rest..., last ]) -> [ rest..., last, last ]
+
+        drop.inverse = dup
+        dup.inverse = drop
+
+        rules = [
+          tokens "a b x c"
+          tokens "c y d"
+          tokens "d d z e"
+          [ ( tokens "* drop" )..., drop ]
+          [ ( tokens "* dup" )..., dup ]
+        ]
+
+        backward = Backward.make rules
+        assert.deepEqual [ "x", "c" ], backward.chain tokens "y"        
+        assert.deepEqual [ "b" ], backward.chain tokens "x y"        
+        console.log backward.compile tokens "dup z"
+        # assert.deepEqual ( tokens "y dup d" ), backward.chain tokens "z"
+        # assert !( backward.chain tokens "a b x y" )?
     ]
  
   ]

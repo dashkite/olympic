@@ -19,6 +19,7 @@ equal = ( a, b ) ->
 
 
 isWildcard = ( value ) ->
-  ( value?.includes "." ) && ( value.includes "*" )
+  ( value == "*" ) ||
+    (( value?.includes "." ) && ( value.includes "*" ))
 
 export { equal, isWildcard }
