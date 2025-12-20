@@ -5,8 +5,7 @@ class Forward
   @make: ( rules ) ->
     Object.assign ( new @ ), { rules }
 
-  @compile: ( rules, program ) ->
-    stack = []
+  @compile: ( rules, program, stack = []) ->
     while ( program.length > 0 )
       for [ conditions..., action ] in rules
         if ( match = overlap [ stack..., program... ], conditions )?
@@ -27,14 +26,16 @@ class Forward
         candidates.push operator        
     candidates
 
-  @chain: ( rules, program ) ->
-    stack = @compile rules, program
+  @chain: ( rules, program, stack = []) ->
+    stack = @compile rules, program, stack
     ( @satisfy rules, stack ) if stack?
 
-  compile: ( program ) -> Forward.compile @rules, program
+  compile: ( program, stack = []) -> 
+    Forward.compile @rules, program, stack
 
   satisfy: ( stack ) -> Forward.satisfy @rules, stack
 
-  chain: ( program ) -> Forward.chain @rules, program
+  chain: ( program, stack = []) -> 
+    Forward.chain @rules, program, stack
 
 export { Forward }
