@@ -3,14 +3,15 @@ import {test, success} from "@dashkite/amen"
 import print from "@dashkite/amen-console"
 
 import { Forward, Backward } from "../src"
-import { tokens } from "../src/helpers/tokens"
+import { SimpleRule, rule, mixin } from "../src/rule"
 import { equal } from "../src/helpers/wildcard"
+import { tokens } from "../src/helpers/tokens"
 
 do ->
 
   print await test "Olympic", [
 
-    test "wildcards", ->
+    test "wildcard equality", ->
       assert equal "foo", "foo"
       assert !( equal "foo", "bar" )
       assert !( equal "foo.bar", "bar" )
@@ -28,10 +29,10 @@ do ->
     test "chaining, without wildcards", do ->
 
       rules = [
-        tokens "a b x c"
-        tokens "c y d"
-        tokens "d z e"
-        tokens "a d w f"
+        rule "a b x c"
+        rule "c y d"
+        rule "d z e"
+        rule "a d w f"
       ]      
 
       [
@@ -51,7 +52,7 @@ do ->
           assert.deepEqual [ "x", "c" ], backward.chain tokens "y"        
           assert.deepEqual [ "b" ], backward.chain tokens "x y"        
           assert.deepEqual [ "a" ], backward.chain tokens "b x y"
-          assert !( backward.chain tokens "a b x y" )?
+          assert !( backward.chain tokens "c b x y" )?
 
       ]
 
@@ -60,8 +61,8 @@ do ->
       test "forward", ->
 
         rules = [
-          tokens "a b x k.c"
-          tokens "*.c y d"
+          rule "a b x k.c"
+          rule "*.c y d"
         ]      
 
         program = tokens "a a b x"
@@ -72,8 +73,8 @@ do ->
       test "backward", ->
 
         rules = [
-          tokens "a b x k.c"
-          tokens "*.c y d"
+          rule "a b x k.c"
+          rule "*.c y d"
         ]      
       
         backward = Backward.make rules
@@ -81,117 +82,40 @@ do ->
 
     ]
 
-    test "chaining with function products", [
-      
-      test "forward", ->
-
-        drop = ( stack ) -> stack[ ...-1 ]
-        dup = ([ rest..., last ]) -> [ rest..., last, last ]
-
-        rules = [
-          tokens "a b x c"
-          tokens "c y d"
-          tokens "d d z e"
-          [ ( tokens "* drop" )..., drop ]
-          [ ( tokens "* dup" )..., dup ]
-        ]
-
-        program = tokens "a b x y dup"
-        forward = Forward.make rules
-        assert.deepEqual ( stack = forward.compile program ), [ "d", "d" ]
-        assert.deepEqual ( forward.satisfy stack ), [ "z", "drop", "dup" ]
-
-      test "backward", ->
-
-        drop = ( stack ) -> stack[ ...-1 ]
-        dup = ([ rest..., last ]) -> [ rest..., last, last ]
-
-        drop.inverse = dup
-        dup.inverse = drop
-
-        rules = [
-          tokens "a b x c"
-          tokens "c y d"
-          tokens "d d z e"
-          [ ( tokens "* drop" )..., drop ]
-          [ ( tokens "* dup" )..., dup ]
-        ]
-
-        backward = Backward.make rules
-        assert.deepEqual [ "x", "c" ], backward.chain tokens "y"        
-        assert.deepEqual [ "b" ], backward.chain tokens "x y"        
-        # console.log backward.compile tokens "dup z"
-        # assert.deepEqual ( tokens "y dup d" ), backward.chain tokens "z"
-        # assert !( backward.chain tokens "a b x y" )?
-    ]
-
-    test "backward as reverse of forward", ->
-
-      rules = [
-        tokens "a b x c"
-        tokens "c y d"
-        tokens "e w b"
-      ]      
-
-      selur = rules
-        .map ([ operands..., operator, product ]) ->
-          [ _..., last ] = operands
-          [ product, operator, last ]
-      # console.log JSON.stringify ( selur.map ( tokens ) -> tokens.join " " ), null, 2
-      # forward = Forward.make rules
-      # console.log forward.chain tokens "a b x"
-      drawrof = Forward.make selur
-      # console.log drawrof.compile tokens "d y"
-      # console.log drawrof.chain tokens "y"
-      backward = Backward.make selur
-      stack = backward.compile tokens "y"
-      assert.deepEqual [ "x" ], drawrof.chain ( tokens "y" ), stack
-      stack = backward.compile tokens "y x"
-      assert.deepEqual [ "w" ], drawrof.chain ( tokens "y x" ), stack
-
-      rules = [
-        tokens "a b x k.c"
-        tokens "*.c y d"
-      ]      
-    
-      selur = rules
-        .map ([ operands..., operator, product ]) ->
-          [ _..., last ] = operands
-          [ product, operator, last ]
-      # console.log JSON.stringify ( selur.map ( tokens ) -> tokens.join " " ), null, 2
-      # forward = Forward.make rules
-      # console.log forward.chain tokens "a b x"
-      drawrof = Forward.make selur
-      backward = Backward.make selur
-      stack = backward.compile tokens "y"  
-      # console.log drawrof.chain (tokens "y" ), stack  
-      assert.deepEqual [ "x" ], 
-        drawrof.chain (tokens "y" ), stack
+    test "chaining, with stack operators", do ->
 
       drop = ( stack ) -> stack[ ...-1 ]
       dup = ([ rest..., last ]) -> [ rest..., last, last ]
 
-      drop.inverse = dup
-      dup.inverse = drop
+      class Dup extends mixin "* dup *"
+        apply: dup
+        rapply: drop
+
+      class Drop extends mixin "* * drop *"
+        apply: drop
+        rapply: dup
 
       rules = [
-        tokens "a b x c"
-        tokens "c y d"
-        [ ( tokens "* drop" )..., drop ]
-        [ ( tokens "* dup" )..., dup ]
+        rule "a a x c"
+        rule "c y d"
+        Dup.make()
+        Drop.make()
       ]
 
-      selur = rules
-        .map ([ operands..., operator, product ]) ->
-          [ _..., last ] = operands
-          [( product.inverse ? product ), operator, last ]
+      [
 
-      drawrof = Forward.make selur
-      backward = Backward.make selur
-      stack = backward.compile tokens "y"  
-      console.log drawrof.chain tokens "y", stack
-      assert.deepEqual [ "x" ], drawrof.chain tokens "y", stack
-      # assert.deepEqual [ "b" ], backward.chain tokens "x y"      
+        test "forward", ->
+          program = tokens "drop dup"
+          stack = tokens "a b"
+          forward = Forward.make rules
+          assert.deepEqual ( tokens "x dup drop" ),
+            forward.chain program, stack
+
+        test "backward", ->
+          backward = Backward.make rules
+          assert.deepEqual ( tokens "dup drop a" ),
+            backward.chain tokens "x y"
+      ]
  
   ]
 

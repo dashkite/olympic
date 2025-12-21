@@ -1,4 +1,4 @@
-import { overlap } from "./helpers/overlap"
+import { equal } from "./helpers/wildcard"
 
 class Forward
 
@@ -6,24 +6,21 @@ class Forward
     Object.assign ( new @ ), { rules }
 
   @compile: ( rules, program, stack = []) ->
-    while ( program.length > 0 )
-      for [ conditions..., action ] in rules
-        if ( match = overlap [ stack..., program... ], conditions )?
-          [ prefix, _, suffix ] = match
-          stack = if action.apply?
-            action stack
-          else
-            [ prefix..., action ]
-          program = suffix
-          break
-      break unless match
-    stack if program.length == 0
+    for token in program
+      rule = rules.find ({ operator }) -> 
+        equal token, operator
+      if rule?
+        if rule.accept stack
+          stack = rule.apply stack
+        else returned undefined
+      else stack.push token
+    stack
 
   @satisfy: ( rules, stack ) ->
     candidates = []
-    for [ operands..., operator, product ] in rules
-      if ( match = overlap stack, operands )?
-        candidates.push operator        
+    for rule in rules
+      if rule.accept stack
+        candidates.push rule.operator
     candidates
 
   @chain: ( rules, program, stack = []) ->

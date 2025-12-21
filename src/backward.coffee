@@ -7,40 +7,34 @@ class Backward
     Object.assign ( new @ ), { rules }
 
   @compile: ( rules, program ) ->
-    need = []
-    while program.length > 0
-      [ program..., current ] = program
-      rule = rules.find ([ _..., operator, __ ]) ->
-        equal operator, current
-      need = need[ ... -1 ]
+    stack = []
+    for token in program.reverse()
+      rule = rules.find ({ operator }) ->
+        equal token, operator
       if rule?
-        [ operands..., _, product ] = rule
-        need = if product.inverse?
-          product.inverse need
-        else
-          [ need..., operands... ]
-    need
+        if rule.raccept stack
+          stack = rule.rapply stack
+        else return undefined
+      else
+        [ rest..., last ] = stack
+        if equal token, last
+          stack = rest
+        else return undefined
+    stack
 
-  @satisfy: ( rules, need ) ->
-    [ _..., target ] = need
-    if target?
-      operators = rules
-        .values()
-        .filter ([ _..., product ]) -> equal target, product
-        .map ([ _..., operator, __ ]) -> operator
-        .toArray()
-      seen = new Set
-      operands = rules
-        .values()
-        .flatMap ([ operands..., _, product ]) ->
-          [( operands.filter negate isWildcard )..., product ]
-        .filter ( operand ) -> 
-          if !( seen.has operand )
-            seen.add operand
-            equal target, operand
-          else false
-        .toArray()
-      [ operators..., operands... ]
+  @satisfy: ( rules, stack ) ->
+    candidates = []
+    for rule in rules
+      if rule.raccept stack
+        candidates.push rule.operator
+    [ rest..., last ] = stack
+    if isWildcard last
+      operands = new Set
+      for rule in rules when ( equal last, rule.product )
+        operands.add rule.product
+      [ candidates..., operands... ]
+    else
+      [ candidates..., last ]
 
   @chain: ( rules, program ) ->
     need = @compile rules, program
