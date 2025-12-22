@@ -1,4 +1,5 @@
 import { equal } from "./helpers/wildcard"
+import { Rules } from "./rules"
 
 class Forward
 
@@ -6,8 +7,17 @@ class Forward
     Object.assign ( new @ ), { rules }
 
   @compile: ( rules, program, stack = []) ->
+    ( @make rules ).compile program, stack
+
+  @satisfy: ( rules, stack ) ->
+    ( @make rules ).chain stack
+
+  @chain: ( rules, program, stack = []) ->
+    ( @make rules ).chain program, stack 
+
+  compile: ( program, stack = []) -> 
     for token in program
-      rule = rules.find ({ operator }) -> 
+      rule = @rules.find ({ operator }) -> 
         equal token, operator
       if rule?
         if rule.accept stack
@@ -16,23 +26,16 @@ class Forward
       else stack.push token
     stack
 
-  @satisfy: ( rules, stack ) ->
+  satisfy: ( stack ) ->
     candidates = []
-    for rule in rules
+    for rule in @rules
       if rule.accept stack
         candidates.push rule.operator
-    candidates
-
-  @chain: ( rules, program, stack = []) ->
-    stack = @compile rules, program, stack
-    ( @satisfy rules, stack ) if stack?
-
-  compile: ( program, stack = []) -> 
-    Forward.compile @rules, program, stack
-
-  satisfy: ( stack ) -> Forward.satisfy @rules, stack
+    @operands ?= Rules.operands @rules
+    [ candidates..., @operands... ]
 
   chain: ( program, stack = []) -> 
-    Forward.chain @rules, program, stack
+    stack = @compile program, stack
+    ( @satisfy stack ) if stack?
 
 export { Forward }

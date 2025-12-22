@@ -38,5 +38,4 @@ mixin = ( string ) ->
       Object.assign ( new  @ ), 
         @parse string
 
-
 export { Rule, SimpleRule, rule, mixin }
