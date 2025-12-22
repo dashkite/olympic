@@ -1,7 +1,3 @@
-import Generic from "@dashkite/generic"
-
-# Namespace aware comparison
-
 parse = ( name ) ->
   [ first, second ] = name.split "."
   if second? then { ns: first, name: second } else { name: first }
