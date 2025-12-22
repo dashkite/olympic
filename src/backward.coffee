@@ -1,5 +1,6 @@
 import { negate } from "@dashkite/joy/predicate"
 import { equal, isWildcard } from "./helpers/wildcard"
+import { Rules } from "./rules"
 
 class Backward
 
@@ -38,14 +39,12 @@ class Backward
         candidates.push rule.operator
     [ rest..., last ] = stack
     if isWildcard last
-      operands = new Set
-      for rule in @rules when ( equal last, rule.product )
-        operands.add rule.product
+      operands = Rules.expand @rules, last
       [ candidates..., operands... ]
     else
       [ candidates..., last ]
 
-  chain: ( program, stack ) ->
+  chain: ( program, stack = []) ->
     stack = @compile program, stack
     ( @satisfy stack ) if stack?
 

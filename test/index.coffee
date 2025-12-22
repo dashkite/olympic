@@ -62,33 +62,32 @@ do ->
 
       ]
 
-    test "chaining, with wildcards", [
+    test "chaining, with wildcards", do ->
+    
+      rules = [
+        rule "a b x k.c"
+        rule "*.c y d"
+      ]
 
-      test "forward", ->
+      [
 
-        rules = [
-          rule "a b x k.c"
-          rule "*.c y d"
-        ]
+        test "forward", ->
 
-        program = tokens "a a b x"
+          program = tokens "a a b x"
 
-        forward = Forward.make rules
-        assert.deepEqual ( tokens "y a b k.c d"),
-          forward.chain program
+          forward = Forward.make rules
+          assert.deepEqual ( tokens "y a b k.c d"),
+            forward.chain program
 
-      test "backward", ->
+        test "backward", ->
 
-        rules = [
-          rule "a b x k.c"
-          rule "*.c y d"
-        ]
+          program = tokens "y"
 
-        backward = Backward.make rules
-        assert.deepEqual ( tokens "x k.c" ),
-          backward.chain tokens "y"
+          backward = Backward.make rules
+          assert.deepEqual ( tokens "x k.c" ),
+            backward.chain program
 
-    ]
+      ]
 
     test "chaining, with stack operators", do ->
 
@@ -121,9 +120,10 @@ do ->
             forward.chain program, stack
 
         test "backward", ->
+          program = tokens "x y"
           backward = Backward.make rules
           assert.deepEqual ( tokens "dup drop a" ),
-            backward.chain tokens "x y"
+            backward.chain program
       ]
 
   ]
